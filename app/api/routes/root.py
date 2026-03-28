@@ -1,18 +1,22 @@
 from fastapi import APIRouter
 
 from app.core.config import settings
+from app.schemas import MessageResponse
 
 router = APIRouter()
 
 
-@router.get("/", tags=["root"])
-def read_root() -> dict[str, str]:
-    return {
-        "message": f"Welcome to {settings.PROJECT_NAME}",
-        "docs_url": "/docs",
-    }
+@router.get("/", response_model=MessageResponse, tags=["root"])
+def read_root() -> MessageResponse:
+    return MessageResponse(
+        message=f"Welcome to {settings.PROJECT_NAME}",
+        data={"docs_url": "/docs"},
+    )
 
 
-@router.get("/health", tags=["health"])
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+@router.get("/health", response_model=MessageResponse, tags=["health"])
+def health_check() -> MessageResponse:
+    return MessageResponse(
+        message="Service is healthy.",
+        data={"status": "ok"},
+    )

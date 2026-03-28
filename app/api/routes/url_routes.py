@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
+from fastapi import APIRouter, Depends, Path, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import ResourceExpiredError, ResourceNotFoundError
 from app.db import get_db
-from app.schemas import URLCreate, URLResponse, URLStatsResponse
+from app.schemas import ErrorResponse, URLCreate, URLResponse, URLStatsResponse
 from app.services import (
     create_shortened_url,
     get_url_by_short_code,
@@ -12,9 +13,20 @@ from app.services import (
 )
 
 router = APIRouter()
+COMMON_ERROR_RESPONSES = {
+    404: {"model": ErrorResponse, "description": "Resource not found."},
+    410: {"model": ErrorResponse, "description": "Resource has expired."},
+    422: {"model": ErrorResponse, "description": "Validation error."},
+}
 
 
-@router.post("/shorten", response_model=URLResponse, status_code=status.HTTP_201_CREATED, tags=["urls"])
+@router.post(
+    "/shorten",
+    response_model=URLResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["urls"],
+    responses={422: COMMON_ERROR_RESPONSES[422]},
+)
 def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_db)) -> URLResponse:
     db_url = create_shortened_url(
         db=db,
@@ -34,7 +46,15 @@ def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_
     )
 
 
-@router.get("/stats/{short_code}", response_model=URLStatsResponse, tags=["urls"])
+@router.get(
+    "/stats/{short_code}",
+    response_model=URLStatsResponse,
+    tags=["urls"],
+    responses={
+        404: COMMON_ERROR_RESPONSES[404],
+        422: COMMON_ERROR_RESPONSES[422],
+    },
+)
 def get_url_stats(
     short_code: str = Path(
         ...,
@@ -47,10 +67,7 @@ def get_url_stats(
 ) -> URLStatsResponse:
     db_url = get_url_by_short_code(db=db, short_code=short_code)
     if db_url is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Short URL not found.",
-        )
+        raise ResourceNotFoundError("Short URL not found.")
 
     return URLStatsResponse(
         short_code=db_url.short_code,
@@ -61,7 +78,11 @@ def get_url_stats(
     )
 
 
-@router.get("/{short_code}", tags=["urls"])
+@router.get(
+    "/{short_code}",
+    tags=["urls"],
+    responses=COMMON_ERROR_RESPONSES,
+)
 def redirect_to_url(
     short_code: str = Path(
         ...,
@@ -74,16 +95,10 @@ def redirect_to_url(
 ) -> RedirectResponse:
     db_url = get_url_by_short_code(db=db, short_code=short_code)
     if db_url is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Short URL not found.",
-        )
+        raise ResourceNotFoundError("Short URL not found.")
 
     if is_url_expired(db_url):
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="Short URL has expired.",
-        )
+        raise ResourceExpiredError("Short URL has expired.")
 
     increment_click_count(db=db, db_url=db_url)
     return RedirectResponse(

@@ -5,6 +5,7 @@ from fastapi import FastAPI
 import app.models
 from app.api import api_router
 from app.core.config import settings
+from app.core.handlers import register_exception_handlers
 from app.db import init_db
 
 
@@ -21,6 +22,7 @@ def create_application() -> FastAPI:
         description=settings.DESCRIPTION,
         lifespan=lifespan,
     )
+    register_exception_handlers(app)
     app.include_router(api_router)
     return app
 

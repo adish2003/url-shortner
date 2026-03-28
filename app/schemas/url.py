@@ -5,6 +5,10 @@ from pydantic import BaseModel, Field, HttpUrl
 
 class URLCreate(BaseModel):
     original_url: HttpUrl = Field(..., description="The original URL to shorten.")
+    expiry_days: int | None = Field(
+        default=None,
+        description="Optional number of days before the shortened URL expires.",
+    )
     expires_at: datetime | None = Field(
         default=None,
         description="Optional expiration time for the shortened URL.",

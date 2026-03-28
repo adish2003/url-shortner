@@ -33,6 +33,7 @@ def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_
     db_url = create_shortened_url(
         db=db,
         original_url=str(payload.original_url),
+        expiry_days=payload.expiry_days,
         expires_at=payload.expires_at,
     )
     short_url = f"{str(request.base_url).rstrip('/')}/{db_url.short_code}"

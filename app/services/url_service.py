@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models import URL
@@ -38,9 +38,12 @@ def is_url_expired(db_url: URL) -> bool:
     return db_url.expires_at <= datetime.now(timezone.utc)
 
 
-def register_click(db: Session, db_url: URL) -> URL:
-    db_url.clicks += 1
-    db.add(db_url)
+def increment_click_count(db: Session, db_url: URL) -> URL:
+    db.execute(
+        update(URL)
+        .where(URL.id == db_url.id)
+        .values(clicks=URL.clicks + 1),
+    )
     db.commit()
     db.refresh(db_url)
     return db_url

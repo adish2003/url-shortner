@@ -8,8 +8,8 @@ from app.schemas import URLCreate, URLResponse
 from app.services import (
     create_shortened_url,
     get_url_by_short_code,
+    increment_click_count,
     is_url_expired,
-    register_click,
 )
 
 router = APIRouter()
@@ -62,7 +62,7 @@ def redirect_to_url(short_code: str, db: Session = Depends(get_db)) -> RedirectR
             detail="Short URL has expired.",
         )
 
-    register_click(db=db, db_url=db_url)
+    increment_click_count(db=db, db_url=db_url)
     return RedirectResponse(
         url=db_url.original_url,
         status_code=status.HTTP_307_TEMPORARY_REDIRECT,

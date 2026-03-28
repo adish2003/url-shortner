@@ -1,7 +1,17 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+import app.models  # noqa: F401
 from app.api.routes import router as api_router
 from app.core.config import settings
+from app.db import init_db
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    yield
 
 
 def create_application() -> FastAPI:
@@ -9,6 +19,7 @@ def create_application() -> FastAPI:
         title=settings.PROJECT_NAME,
         version=settings.VERSION,
         description=settings.DESCRIPTION,
+        lifespan=lifespan,
     )
     app.include_router(api_router)
     return app

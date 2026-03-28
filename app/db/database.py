@@ -21,6 +21,10 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
+def init_db() -> None:
+    Base.metadata.create_all(bind=engine)
+
+
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:

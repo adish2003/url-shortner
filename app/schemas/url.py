@@ -19,3 +19,11 @@ class URLResponse(BaseModel):
     clicks: int
     created_at: datetime | None
     expires_at: datetime | None
+
+
+class URLStatsResponse(BaseModel):
+    short_code: str
+    original_url: str
+    clicks: int
+    created_at: datetime | None
+    expires_at: datetime | None

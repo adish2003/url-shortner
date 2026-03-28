@@ -1,5 +1,5 @@
 """Pydantic schemas package."""
 
-from app.schemas.url import URLCreate, URLResponse
+from app.schemas.url import URLCreate, URLResponse, URLStatsResponse
 
-__all__ = ["URLCreate", "URLResponse"]
+__all__ = ["URLCreate", "URLResponse", "URLStatsResponse"]

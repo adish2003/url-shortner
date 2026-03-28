@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db import get_db
-from app.schemas import URLCreate, URLResponse
+from app.schemas import URLCreate, URLResponse, URLStatsResponse
 from app.services import (
     create_shortened_url,
     get_url_by_short_code,
@@ -41,6 +41,24 @@ def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_
         original_url=db_url.original_url,
         short_code=db_url.short_code,
         short_url=short_url,
+        clicks=db_url.clicks,
+        created_at=db_url.created_at,
+        expires_at=db_url.expires_at,
+    )
+
+
+@router.get("/stats/{short_code}", response_model=URLStatsResponse, tags=["urls"])
+def get_url_stats(short_code: str, db: Session = Depends(get_db)) -> URLStatsResponse:
+    db_url = get_url_by_short_code(db=db, short_code=short_code)
+    if db_url is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Short URL not found.",
+        )
+
+    return URLStatsResponse(
+        short_code=db_url.short_code,
+        original_url=db_url.original_url,
         clicks=db_url.clicks,
         created_at=db_url.created_at,
         expires_at=db_url.expires_at,

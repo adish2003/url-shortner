@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db import get_db
 from app.schemas import URLCreate, URLResponse
-from app.services import create_shortened_url
+from app.services import (
+    create_shortened_url,
+    get_url_by_short_code,
+    is_url_expired,
+    register_click,
+)
 
 router = APIRouter()
 
@@ -38,4 +44,26 @@ def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_
         clicks=db_url.clicks,
         created_at=db_url.created_at,
         expires_at=db_url.expires_at,
+    )
+
+
+@router.get("/{short_code}", tags=["urls"])
+def redirect_to_url(short_code: str, db: Session = Depends(get_db)) -> RedirectResponse:
+    db_url = get_url_by_short_code(db=db, short_code=short_code)
+    if db_url is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Short URL not found.",
+        )
+
+    if is_url_expired(db_url):
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Short URL has expired.",
+        )
+
+    register_click(db=db, db_url=db_url)
+    return RedirectResponse(
+        url=db_url.original_url,
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     )

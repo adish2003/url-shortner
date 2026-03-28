@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.db import get_db
 from app.schemas import URLCreate, URLResponse, URLStatsResponse
 from app.services import (
@@ -13,19 +12,6 @@ from app.services import (
 )
 
 router = APIRouter()
-
-
-@router.get("/", tags=["root"])
-def read_root() -> dict[str, str]:
-    return {
-        "message": f"Welcome to {settings.PROJECT_NAME}",
-        "docs_url": "/docs",
-    }
-
-
-@router.get("/health", tags=["health"])
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
 
 
 @router.post("/shorten", response_model=URLResponse, status_code=status.HTTP_201_CREATED, tags=["urls"])

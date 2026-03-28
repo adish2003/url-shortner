@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.crud import create_url as create_url_record
+from app.crud import get_url_by_short_code as get_url_by_short_code_record
+from app.crud import increment_click_count as increment_click_count_record
 from app.models import URL
 from app.utils import generate_unique_short_code
 
@@ -14,19 +16,16 @@ def create_shortened_url(
     expires_at: datetime | None = None,
 ) -> URL:
     short_code = generate_unique_short_code(db)
-    db_url = URL(
+    return create_url_record(
+        db=db,
         original_url=original_url,
         short_code=short_code,
         expires_at=resolve_expiration(expiry_days=expiry_days, expires_at=expires_at),
     )
-    db.add(db_url)
-    db.commit()
-    db.refresh(db_url)
-    return db_url
 
 
 def get_url_by_short_code(db: Session, short_code: str) -> URL | None:
-    return db.scalar(select(URL).where(URL.short_code == short_code))
+    return get_url_by_short_code_record(db=db, short_code=short_code)
 
 
 def is_url_expired(db_url: URL) -> bool:
@@ -53,11 +52,4 @@ def resolve_expiration(
 
 
 def increment_click_count(db: Session, db_url: URL) -> URL:
-    db.execute(
-        update(URL)
-        .where(URL.id == db_url.id)
-        .values(clicks=URL.clicks + 1),
-    )
-    db.commit()
-    db.refresh(db_url)
-    return db_url
+    return increment_click_count_record(db=db, db_url=db_url)

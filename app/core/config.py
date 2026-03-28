@@ -24,6 +24,7 @@ class Settings:
         "DATABASE_URL",
         "postgresql://postgres:postgres@localhost:5432/url_shortener",
     )
+    DATABASE_ECHO: bool = _get_bool(os.getenv("DATABASE_ECHO"), default=False)
 
 
 settings = Settings()

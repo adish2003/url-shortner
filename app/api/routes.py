@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -49,7 +49,16 @@ def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_
 
 
 @router.get("/stats/{short_code}", response_model=URLStatsResponse, tags=["urls"])
-def get_url_stats(short_code: str, db: Session = Depends(get_db)) -> URLStatsResponse:
+def get_url_stats(
+    short_code: str = Path(
+        ...,
+        min_length=1,
+        max_length=32,
+        pattern="^[A-Za-z0-9]+$",
+        description="The shortened code used to look up URL analytics.",
+    ),
+    db: Session = Depends(get_db),
+) -> URLStatsResponse:
     db_url = get_url_by_short_code(db=db, short_code=short_code)
     if db_url is None:
         raise HTTPException(
@@ -67,7 +76,16 @@ def get_url_stats(short_code: str, db: Session = Depends(get_db)) -> URLStatsRes
 
 
 @router.get("/{short_code}", tags=["urls"])
-def redirect_to_url(short_code: str, db: Session = Depends(get_db)) -> RedirectResponse:
+def redirect_to_url(
+    short_code: str = Path(
+        ...,
+        min_length=1,
+        max_length=32,
+        pattern="^[A-Za-z0-9]+$",
+        description="The shortened code used to redirect to the original URL.",
+    ),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
     db_url = get_url_by_short_code(db=db, short_code=short_code)
     if db_url is None:
         raise HTTPException(
